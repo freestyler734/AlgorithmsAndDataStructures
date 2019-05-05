@@ -66,7 +66,7 @@ public class Heap {
             int curLayer = (int) (Math.log(i + 1)/Math.log(2)) + 1;
             IntStream.range(0, (int) (Math.pow(2, layerCount - curLayer) / 2)).forEach((e) -> System.out.print("   "));
             System.out.printf(" %d ", array[i]);
-            if (i == 0 || i + 1 == (Math.pow(2,curLayer - 1) + 1)) {
+            if (i == 0 || i == (Math.pow(2, i - 1) + 1)) {
                 System.out.println("");
             }
         }
