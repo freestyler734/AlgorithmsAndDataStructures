@@ -6,19 +6,23 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Реализация алгоритма 1 определения document distance
+ * Реализация алгоритма 2 определения document distance
  * из лекций курса введение в алгоритмы и структуры данных.
  * Алгоритм реализован таким образом чтобы иметь такую же сложность
  * как и оригинальная реализация на питоне, поэтому некоторые методы
  * реализованы не самым лучшим образом
  *
+ * В данном варианте в методе getWordsFromLineList заменяем слияние списков в один, расширением первого.
  */
-public class Algorithm1 {
+public class Algorithm2 {
 
     /*
      * Определение сложности алгоритма O не считая считывания текста из файла, где
@@ -30,13 +34,14 @@ public class Algorithm1 {
      * P - кол-во уникальных слов в тексте
      *
      *
-     * Общая сложность = O((Z1)^2 + (Z2)^2), т.к. Z >= P
+     * Старая Общая сложность = O((Z1)^2 + (Z2)^2), т.к. Z >= P
+     * Новая Общая сложность = O(Z1 * P1 +  Z2 * P2), т.к. Z >= P
      * Самый долгий метод - wordFrequenciesForFile !!!
      */
     public static void main(String[] args) {
         Instant start = Instant.now();
-        List<Map.Entry<String,Integer>> sortedWordList1 = wordFrequenciesForFile("t2.bobsey.txt"); // 1 - раз, сложность - O(k * (l1)^2 + (Z1)^2 + (P1)^2) = O((Z1)^2)
-        List<Map.Entry<String,Integer>> sortedWordList2 = wordFrequenciesForFile("t3.lewis.txt");  // 1 - раз, сложность - O(k * (l2)^2 + (Z2)^2 + (P2)^2) = O((Z2)^2)
+        List<Map.Entry<String,Integer>> sortedWordList1 = wordFrequenciesForFile("t2.bobsey.txt"); // 1 - раз, сложность - O(Z1 + Z1 * P1 + (P1)^2) = O((Z1) * P1)
+        List<Map.Entry<String,Integer>> sortedWordList2 = wordFrequenciesForFile("t3.lewis.txt");  // 1 - раз, сложность - O(Z2 + Z2 * P2 + (P2)^2) = O((Z2) * P2)
         double distance = vectorAngle(sortedWordList1, sortedWordList2);                                    // 1 - раз, сложность - O((P1)^2 + (P2)^2 + P1 * P2) = O((P1)^2 + (P2)^2), т.к. если P1, P2 > 0 => (P1)^2 + (P2)^2 > P1 * P2
         System.out.println("distance: " + distance);
         Instant end = Instant.now();
@@ -67,7 +72,8 @@ public class Algorithm1 {
     /**
      * Подсчет слов в файле fileName
      *
-     * Сложность - O(Z^2 + Z * P + P^2)
+     * Старая Сложность - O(Z^2 + Z * P + P^2)
+     * Новая Сложность - O(Z + Z * P + P^2)
      * @param fileName
      * @return ArrayList пар (Слово, кол-во совпадений) отсортированных по словам
      */
@@ -76,7 +82,7 @@ public class Algorithm1 {
         List<String> lineList = readFileLines(fileName);
         System.out.printf("lines count at %s: %d\n",new File(fileName).getName(), lineList.size());
 
-        List<String> wordList = getWordsFromLineList(lineList);                     // 1 - раз,(Z^2) - сложность
+        List<String> wordList = getWordsFromLineList(lineList);                     // 1 - раз,(Z) - сложность
         System.out.printf("word count at %s: %d\n",new File(fileName).getName(), wordList.size());
 
         List<Map.Entry<String, Integer>> freqMapping = countFrequency(wordList);    // 1 - раз Z * P - сложность
@@ -88,23 +94,19 @@ public class Algorithm1 {
     /**
      * Возвращает ArrayList со словами строк из списка lines
      *
-     * Сложность = O(1 + l + (l * k * w) + (k * l^2) + kl + l + 1) = O(k * l^2) = O(Z^2),
-     * т.к. в каждой строке кол-ве строк примерно одинаково и равно k, но кол-во строк возрастает квадратично =>
-     * => Z = k * l возрастает квадратично
+     * Cтарая Сложность = O(Z^2)
+     * Новая Сложность = O(1 + l + (l * k * w) + (k * l) + kl + l + 1) = O(k * l) = O(Z)
      * @param lines
      * @return
      */
     private static  List<String> getWordsFromLineList(List<String> lines) {
         ArrayList<String> wordList = new ArrayList<>();                         // 1 - раз, 1 - стоимость
-        for (String line: lines) {                                              // l' - раз, 1 - стоимость
+        for (String line: lines) {                                              // l - раз, 1 - стоимость
             List<String> wordsInLine = getWordsFromString(line);                // l' - раз, n - стоимость
-
-            // Т.к. на каждой итерации мы перемещаем элементы списков wordList и wordsInLine в новый список,
-            // то стоимость одной операции = (l' * k + k + 1), k - слов в строке и l' * k слов в документе
-            wordList = Stream.concat(wordList.stream(), wordsInLine.stream())   // l' - раз, стоимость = l' * k + k + 1
-                    .collect(Collectors.toCollection(() -> new ArrayList<String>()));
+            // Заменяем метод по слиянию списков в 3-й, на метод
+            wordList.addAll(wordsInLine);                                       // l' - раз, стоимость = k
         }
-        return wordList;                                                        // 1' - раз, 1 - стоимость
+        return wordList;                                                        // 1 - раз, 1 - стоимость
     }
 
     /**
