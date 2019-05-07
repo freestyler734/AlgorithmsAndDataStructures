@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Реализация алгоритма 5 определения document distance
+ * Реализация алгоритма 7 определения document distance
  * из лекций курса введение в алгоритмы и структуры данных.
  * Алгоритм реализован таким образом чтобы иметь такую же сложность
  * как и оригинальная реализация на питоне, поэтому некоторые методы
@@ -22,8 +22,10 @@ import java.util.Map;
  * Изменен алгоритм подсчета скалярного произведения векторов методом 2-х указателей
  * Изменен способ определения векторов с помощью хеш-таблицы
  * Изменен алгоритм разбивки строки на слова
+ * Изменен алгоритм сортировки с Сортировки вставками на Сортировку слиянием
+ * Изменен алгоритм подсчета  скалярного произведения путем  использования хештаблиц и отказа от сортировки
  */
-public class Algorithm5 {
+public class Algorithm7 {
 
     /*
      * Определение сложности алгоритма O не считая считывания текста из файла, где
@@ -35,15 +37,15 @@ public class Algorithm5 {
      * P - кол-во уникальных слов в тексте
      *
      *
-     * Старая Общая сложность = O((Z1)^2 + (Z2)^2), т.к. Z >= P
-     * Новая Общая сложность = O(Z1 + (P1)^2 + Z2 + (P2)^2)
+     * Старая Общая сложность = O(Z1 + P1 * log(P1) + Z2 + P2 * log(P2))
+     * Новая Общая сложность = O(Z1+ Z2)
      * Самый долгий метод - wordFrequenciesForFile !!!
      */
     public static void main(String[] args) {
         Instant start = Instant.now();
-        List<Map.Entry<String,Integer>> sortedWordList1 = wordFrequenciesForFile("t2.bobsey.txt"); // 1 - раз, сложность - O(Z1 + (P1)^2)
-        List<Map.Entry<String,Integer>> sortedWordList2 = wordFrequenciesForFile("t3.lewis.txt");  // 1 - раз, сложность - O(Z2 + (P2)^2)
-        double distance = vectorAngle(sortedWordList1, sortedWordList2);                                    // 1 - раз, сложность - O((P1) + (P2))
+        HashMap<String,Integer> sortedWordList1 = wordFrequenciesForFile("t2.bobsey.txt"); // 1 - раз, сложность - O(Z1)
+        HashMap<String,Integer> sortedWordList2 = wordFrequenciesForFile("t3.lewis.txt");  // 1 - раз, сложность - O(Z2)
+        double distance = vectorAngle(sortedWordList1, sortedWordList2);                            // 1 - раз, сложность - O((P1) + (P2))
         System.out.println("distance: " + distance);
         Instant end = Instant.now();
         System.out.println("execution time: " + Duration.between(start, end));
@@ -73,23 +75,22 @@ public class Algorithm5 {
     /**
      * Подсчет слов в файле fileName
      *
-     * Старая Сложность - O(Z^2 + Z * P + P^2)
-     * Новая Сложность - O(Z + Z + P^2) = O(Z + P^2)
+     * Старая Сложность - O(Z + P * log(P))
+     * Новая Сложность - O(Z + 1) = O(Z)
      * @param fileName
-     * @return ArrayList пар (Слово, кол-во совпадений) отсортированных по словам
+     * @return HashMap пар (Слово, кол-во совпадений)
      */
-    private static List<Map.Entry<String, Integer>>  wordFrequenciesForFile(String fileName) {
+    private static HashMap<String, Integer>  wordFrequenciesForFile(String fileName) {
 
         List<String> lineList = readFileLines(fileName);
         System.out.printf("lines count at %s: %d\n",new File(fileName).getName(), lineList.size());
 
-        List<String> wordList = getWordsFromLineList(lineList);                     // 1 - раз,(Z) - сложность
+        List<String> wordList = getWordsFromLineList(lineList);                     // 1 - раз, (Z) - сложность
         System.out.printf("word count at %s: %d\n",new File(fileName).getName(), wordList.size());
 
-        List<Map.Entry<String, Integer>> freqMapping = countFrequency(wordList);    // 1 - раз Z  - сложность
+        HashMap<String, Integer> freqMapping = countFrequency(wordList);             // 1 - раз, Z  - сложность
 
-        insertionSort(freqMapping);                                                 // 1 - раз P^2 - сложность
-        return freqMapping;
+        return freqMapping;                                                          // 1 - раз, 1 - сложность
     }
 
     /**
@@ -151,7 +152,7 @@ public class Algorithm5 {
      * @param wordList
      * @return
      */
-    private static List<Map.Entry<String, Integer>> countFrequency(List<String> wordList) {
+    private static HashMap<String, Integer> countFrequency(List<String> wordList) {
         // Меняем алгоритм составления вектора, путем замены списка Хэш-таблицей
         HashMap<String, Integer> L = new HashMap<>();               // 1 - раз, 1 - стоимость
         for (String newWord: wordList) {                            // Z - раз, 1 - стоимость
@@ -162,7 +163,7 @@ public class Algorithm5 {
             }
         }
 
-        return new ArrayList<>(L.entrySet());                       // 1 - раз, Z - стоимость
+        return L;                                                   // 1 - раз, 1 - стоимость
     }
 
     /**
@@ -192,10 +193,10 @@ public class Algorithm5 {
      * @param L2
      * @return
      */
-    private static double vectorAngle(List<Map.Entry<String,Integer>> L1, List<Map.Entry<String,Integer>> L2) {
-        long numerator = innerProduct(L1, L2);                                     // 1 - раз, сложность - O(P)
+    private static double vectorAngle(HashMap<String,Integer> L1, HashMap<String,Integer> L2) {
+        long numerator = innerProduct(L1, L2);                                     // 1 - раз, сложность - O(P1)
         double denominator = Math.sqrt(innerProduct(L1,L1) * innerProduct(L2,L2)); // 1 - раз, сложность - O((P1) + (P2) + 1)
-        return Math.acos(numerator / denominator);
+        return Math.acos(numerator / denominator);                                 // 1 - раз, сложность - 1
     }
 
 
@@ -203,31 +204,59 @@ public class Algorithm5 {
      * Возвращает скалаярное произведение векторов
      *
      * Старая Сложность - O(P1 * P2)
-     * Новая Сложность - O(P)
+     * Новая Сложность - O(P1)
      * @param L1
      * @param L2
      * @return
      */
-    private static long innerProduct(List<Map.Entry<String,Integer>> L1, List<Map.Entry<String,Integer>> L2) {
+    private static long innerProduct(HashMap<String,Integer> L1, HashMap<String,Integer> L2) {
         long sum = 0;                                                           // 1 - раз, 1 - стоимость
 
-        int i = 0;                                                              // 1 - раз, 1 - стоимость
-        int j = 0;                                                              // 1 - раз, 1 - стоимость
+        for (Map.Entry<String,Integer> entry: L1.entrySet()) {                  // L1 - раз, 1 - стоимость
+            sum += entry.getValue() * (L2.get(entry.getKey()) == null ? 0 : L2.get(entry.getKey())); // L1 - раз, 1 - стоимость
+        }
 
-        // Заменяем алгоритм подсчета скаларного произведения методом 2-х указателей,
-        // т.к. массивы отсортированы и все значения уникальны
-        while (i < L1.size() && j < L2.size()) {                                // P - раз, 1 - стоимость
-            if (L1.get(i).getKey().compareTo(L2.get(j).getKey()) < 0) {
+        return sum;                                                             // 1 - раз, 1 - стоимость
+    }
+
+    /**
+     * Сортировка слиянием
+     *
+     * Сложность - Сложность O(P * log(P))
+     * @param list
+     * @return
+     */
+    public static List<Map.Entry<String, Integer>> mergeSort(List<Map.Entry<String, Integer>> list) {
+        if (list.size() < 2) {
+            return list;
+        }
+
+        int middle = ((list.size()) / 2);
+        List<Map.Entry<String, Integer>> left = list.subList(0, middle);
+        List<Map.Entry<String, Integer>> right = list.subList(middle, list.size());
+
+        left = mergeSort(left);
+        right = mergeSort(right);
+
+        List<Map.Entry<String, Integer>> merged = new ArrayList<>();
+
+        int i = 0;
+        int j = 0;
+        while (i < left.size() && j < right.size()) {
+            Map.Entry<String, Integer> leftEntry = left.get(i);
+            Map.Entry<String, Integer> rightEntry = right.get(j);
+
+            if (leftEntry.getKey().compareTo(rightEntry.getKey()) < 0) {
+                merged.add(leftEntry);
                 i++;
-            } else if (L1.get(i).getKey().compareTo(L2.get(j).getKey()) > 0) {
-                j++;
             } else {
-                sum += L1.get(i).getValue() * L2.get(j).getValue();
-                i++;
+                merged.add(rightEntry);
                 j++;
             }
         }
-        return sum;
+        merged.addAll(left.subList(i, left.size()));
+        merged.addAll(right.subList(j, right.size()));
+        return merged;
     }
 
 }

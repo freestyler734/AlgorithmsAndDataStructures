@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Реализация алгоритма 5 определения document distance
+ * Реализация алгоритма 6 определения document distance
  * из лекций курса введение в алгоритмы и структуры данных.
  * Алгоритм реализован таким образом чтобы иметь такую же сложность
  * как и оригинальная реализация на питоне, поэтому некоторые методы
@@ -22,8 +22,9 @@ import java.util.Map;
  * Изменен алгоритм подсчета скалярного произведения векторов методом 2-х указателей
  * Изменен способ определения векторов с помощью хеш-таблицы
  * Изменен алгоритм разбивки строки на слова
+ * Изменен алгоритм сортировки с Сортировки вставками сортировкой слиянием
  */
-public class Algorithm5 {
+public class Algorithm6 {
 
     /*
      * Определение сложности алгоритма O не считая считывания текста из файла, где
@@ -35,14 +36,14 @@ public class Algorithm5 {
      * P - кол-во уникальных слов в тексте
      *
      *
-     * Старая Общая сложность = O((Z1)^2 + (Z2)^2), т.к. Z >= P
-     * Новая Общая сложность = O(Z1 + (P1)^2 + Z2 + (P2)^2)
+     * Старая Общая сложность = O(Z1 + (P1)^2 + Z2 + (P2)^2)
+     * Новая Общая сложность = O(Z1 + P1 * log(P1) + Z2 + P2 * log(P2)), т.к. P < P * log(P)
      * Самый долгий метод - wordFrequenciesForFile !!!
      */
     public static void main(String[] args) {
         Instant start = Instant.now();
-        List<Map.Entry<String,Integer>> sortedWordList1 = wordFrequenciesForFile("t2.bobsey.txt"); // 1 - раз, сложность - O(Z1 + (P1)^2)
-        List<Map.Entry<String,Integer>> sortedWordList2 = wordFrequenciesForFile("t3.lewis.txt");  // 1 - раз, сложность - O(Z2 + (P2)^2)
+        List<Map.Entry<String,Integer>> sortedWordList1 = wordFrequenciesForFile("t2.bobsey.txt"); // 1 - раз, сложность - O(Z1 + P1 * log(P1))
+        List<Map.Entry<String,Integer>> sortedWordList2 = wordFrequenciesForFile("t3.lewis.txt");  // 1 - раз, сложность - O(Z2 + P2 * log(P2))
         double distance = vectorAngle(sortedWordList1, sortedWordList2);                                    // 1 - раз, сложность - O((P1) + (P2))
         System.out.println("distance: " + distance);
         Instant end = Instant.now();
@@ -73,8 +74,8 @@ public class Algorithm5 {
     /**
      * Подсчет слов в файле fileName
      *
-     * Старая Сложность - O(Z^2 + Z * P + P^2)
-     * Новая Сложность - O(Z + Z + P^2) = O(Z + P^2)
+     * Старая Сложность - O(Z + P^2)
+     * Новая Сложность - O(Z + Z + P * log(P)) = O(Z + P * log(P))
      * @param fileName
      * @return ArrayList пар (Слово, кол-во совпадений) отсортированных по словам
      */
@@ -86,10 +87,9 @@ public class Algorithm5 {
         List<String> wordList = getWordsFromLineList(lineList);                     // 1 - раз,(Z) - сложность
         System.out.printf("word count at %s: %d\n",new File(fileName).getName(), wordList.size());
 
-        List<Map.Entry<String, Integer>> freqMapping = countFrequency(wordList);    // 1 - раз Z  - сложность
+        List<Map.Entry<String, Integer>> freqMapping = countFrequency(wordList);    // 1 - раз, Z  - сложность
 
-        insertionSort(freqMapping);                                                 // 1 - раз P^2 - сложность
-        return freqMapping;
+        return mergeSort(freqMapping);                                              // 1 - раз, P * log(P)
     }
 
     /**
@@ -228,6 +228,46 @@ public class Algorithm5 {
             }
         }
         return sum;
+    }
+
+    /**
+     * Сортировка слиянием
+     *
+     * Сложность - Сложность O(P * log(P))
+     * @param list
+     * @return
+     */
+    public static List<Map.Entry<String, Integer>> mergeSort(List<Map.Entry<String, Integer>> list) {
+        if (list.size() < 2) {
+            return list;
+        }
+
+        int middle = ((list.size()) / 2);
+        List<Map.Entry<String, Integer>> left = list.subList(0, middle);
+        List<Map.Entry<String, Integer>> right = list.subList(middle, list.size());
+
+        left = mergeSort(left);
+        right = mergeSort(right);
+
+        List<Map.Entry<String, Integer>> merged = new ArrayList<>();
+
+        int i = 0;
+        int j = 0;
+        while (i < left.size() && j < right.size()) {
+            Map.Entry<String, Integer> leftEntry = left.get(i);
+            Map.Entry<String, Integer> rightEntry = right.get(j);
+
+            if (leftEntry.getKey().compareTo(rightEntry.getKey()) < 0) {
+                merged.add(leftEntry);
+                i++;
+            } else {
+                merged.add(rightEntry);
+                j++;
+            }
+        }
+        merged.addAll(left.subList(i, left.size()));
+        merged.addAll(right.subList(j, right.size()));
+        return merged;
     }
 
 }
