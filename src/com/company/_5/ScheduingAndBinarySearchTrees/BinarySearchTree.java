@@ -181,23 +181,22 @@ public class BinarySearchTree<K extends Comparable<K>, V> {
     }
 
     public V delete(K key) {
-        return (V) deleteNode(root, key).value;
+        Node<K, V> deleted = deleteNode(root, false, key);
+        return deleted == null ? null : deleted.value;
     }
 
-    private Node<K, V> deleteNode(Node<K, V> current, K key) {
+    private Node<K, V> deleteNode(Node<K, V> current, boolean isLeft, K key) {
         if (current == null) {
             return current;
         }
 
         Node<K, V> found = null;
-        boolean isLeft = false;
         if (key.compareTo(current.key) < 0) {
-            found = deleteNode(current.leftChild, key);
-            isLeft = true;
+            found = deleteNode(current.leftChild,true, key);
         } else if(key.compareTo(current.key) > 0) {
-            found = deleteNode(current.rightChild, key);
+            found = deleteNode(current.rightChild,false, key);
         } else {
-            deleteNodeRelations(current, false);
+            deleteNodeRelations(current, isLeft);
             return current;
         }
 
@@ -206,57 +205,76 @@ public class BinarySearchTree<K extends Comparable<K>, V> {
 
     private void deleteNodeRelations(Node<K, V> node, boolean isLeft) {
         Node<K, V> parent = node.parent;
-        if (parent != null) {
+        Node<K, V> newNode = null;
 
-            if (node.leftChild == null && node.rightChild == null) {
-                if (isLeft) {
-                    parent.leftChild = null;
-                } else {
-                    parent.rightChild = null;
-                }
-            } else if (node.leftChild != null && node.rightChild != null) {
-
-                Node<K, V> current = node.rightChild;
-                while (current.leftChild != null) {
-                    current = current.leftChild;
-                }
-
-                if (isLeft) {
-                    parent.leftChild = current;
-                } else {
-                    parent.rightChild = current;
-                }
-                current.parent.leftChild = null;
-                current.leftChild = node.leftChild;
-
-            } else if (node.leftChild != null) {
-                if (isLeft) {
-                    parent.leftChild = node.leftChild;
-                } else {
-                    parent.rightChild = node.leftChild;
-                }
-
+        if (node.leftChild == null && node.rightChild == null) {
+            if (isLeft) {
+                deleteLeftReleation(parent, node);
             } else {
-                if (isLeft) {
-                    parent.leftChild = node.rightChild;
-                } else {
-                    parent.rightChild = node.rightChild;
-                }
+                deleteRightReleation(parent, node);
             }
+        } else if (node.leftChild != null && node.rightChild != null) {
 
-            node.parent = null;
-        } if (node.key.compareTo(root.key) == 0) {
             Node<K, V> current = node.rightChild;
             while (current.leftChild != null) {
                 current = current.leftChild;
             }
 
-            root = current;
-            current.parent.leftChild = null;
-            current.leftChild = node.leftChild;
-            current.rightChild = node.rightChild;
+            Node<K, V> curParent = current.parent;
+            if (curParent.equals(node)) {
+                deleteRightReleation(curParent, current);
+                setLeftRelation(current, node.leftChild);
+            } else {
+                setLeftRelation(curParent, current.rightChild);
+                setLeftRelation(current, node.leftChild);
+                setRightRelation(current, node.rightChild);
+            }
 
+            newNode = current;
+        } else if (node.leftChild != null) {
+            newNode = node.leftChild;
+        } else {
+            newNode = node.rightChild;
         }
+
+        if (parent != null) {
+            if (isLeft) {
+                setLeftRelation(parent, newNode);
+            } else {
+                setRightRelation(parent, newNode);
+            }
+        } else {
+            root = newNode;
+        }
+
+        node.parent = null;
+        node.leftChild = null;
+        node.rightChild = null;
+
     }
+
+    private void setLeftRelation(Node parent, Node leftChild) {
+        if (parent != null) parent.leftChild = leftChild;
+        if (leftChild != null) leftChild.parent = parent;
+
+    }
+
+    private void setRightRelation(Node parent, Node rightChild) {
+        if (parent != null) parent.rightChild = rightChild;
+        if (rightChild != null) rightChild.parent = parent;
+
+    }
+
+    private void deleteLeftReleation(Node parent, Node leftChild) {
+        if (parent != null) parent.leftChild = null;
+        if (leftChild != null) leftChild.parent = null;
+    }
+
+    private void deleteRightReleation(Node parent, Node rightChild) {
+        if (parent != null) parent.rightChild = null;
+        if (rightChild != null) rightChild.parent = null;
+    }
+
+
 
 }

@@ -18,14 +18,15 @@ public class Main {
         bst.add(47, "4");
         bst.add(41, "4");
         bst.add(43, "4");
+        bst.add(43, "4");
         bst.add(62, "4");
         bst.add(65, "4");
         bst.add(65, "4");
 
        // bst.levelPassing();
-        bst.visualizeTree();
-        System.out.println("\n" + bst.delete(49));
-        System.out.println("\t\t\t\t\t\t\t\t\t\t\t\t------------------------");
+//        bst.visualizeTree();
+//        System.out.println("\n" + bst.delete(49));
+//        System.out.println("\t\t\t\t\t\t\t\t\t\t\t\t------------------------");
         bst.visualizeTree();
         System.out.println("\n" + bst.delete(88));
         System.out.println("\t\t\t\t\t\t\t\t\t\t\t\t------------------------");
@@ -33,7 +34,27 @@ public class Main {
         System.out.println("\n" + bst.delete(43));
         System.out.println("\t\t\t\t\t\t\t\t\t\t\t\t------------------------");
         bst.visualizeTree();
-        //System.out.println(bst.getMaxDepth());
+        System.out.println("\n" + bst.delete(64));
+        System.out.println("\t\t\t\t\t\t\t\t\t\t\t\t------------------------");
+        bst.visualizeTree();
+        System.out.println("\n" + bst.delete(61));
+        System.out.println("\t\t\t\t\t\t\t\t\t\t\t\t------------------------");
+        bst.visualizeTree();
+        System.out.println("\n" + bst.delete(49));
+        System.out.println("\t\t\t\t\t\t\t\t\t\t\t\t------------------------");
+        bst.visualizeTree();
+        System.out.println("\n" + bst.delete(48));
+        System.out.println("\t\t\t\t\t\t\t\t\t\t\t\t------------------------");
+        bst.visualizeTree();
+        System.out.println("\n" + bst.delete(46));
+        System.out.println("\t\t\t\t\t\t\t\t\t\t\t\t------------------------");
+        bst.visualizeTree();
+        System.out.println("\n" + bst.delete(47));
+        System.out.println("\t\t\t\t\t\t\t\t\t\t\t\t------------------------");
+        bst.visualizeTree();
+        System.out.println("\n" + bst.delete(47));
+        System.out.println("\t\t\t\t\t\t\t\t\t\t\t\t------------------------");
+        bst.visualizeTree();
 
     }
 }
