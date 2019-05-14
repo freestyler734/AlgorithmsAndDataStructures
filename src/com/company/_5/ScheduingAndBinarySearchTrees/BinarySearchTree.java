@@ -2,6 +2,7 @@ package com.company._5.ScheduingAndBinarySearchTrees;
 
 
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 
@@ -18,6 +19,7 @@ public class BinarySearchTree<K extends Comparable<K>, V> {
         add(node);
         size++;
     }
+
 
     private void add(Node<K, V> node) {
         int curDepth = 1;
@@ -37,19 +39,21 @@ public class BinarySearchTree<K extends Comparable<K>, V> {
                         current = current.leftChild;
                     }
 
-                } else {
+                } else if (node.key.compareTo(current.key) > 0) {
                     if (current.rightChild == null) {
                         current.rightChild = node;
                         current = null;
                     } else {
                         current = current.rightChild;
-
                     }
+                } else {
+                    normalizeRank(current);
+                    return;
                 }
                 curDepth++;
             }
         }
-        maxDepth = maxDepth > curDepth ? maxDepth :curDepth;
+        maxDepth = maxDepth > curDepth ? maxDepth : curDepth;
     }
 
     public void print() {
@@ -134,6 +138,7 @@ public class BinarySearchTree<K extends Comparable<K>, V> {
                 IntStream.range(0, maxDepth - curLayer).forEach(e -> System.out.print("\n"));
             }
         }
+        System.out.println("\n" + IntStream.range(0, (int) Math.pow(2, maxDepth) + 1).mapToObj((e) -> "____").collect(Collectors.joining()) + "\n");
 
     }
 
@@ -147,17 +152,68 @@ public class BinarySearchTree<K extends Comparable<K>, V> {
         straightPassing(node.rightChild,heapStructure, 2 * index + 2);
     }
 
-    public static class Node<K, V> {
+    public static class Node<K extends Comparable<K>, V> {
         private Node parent;
         private Node leftChild;
         private Node rightChild;
-        private int rank;
+        private int rank = 1;
         private K key;
         private V value;
 
         public Node(K key, V value) {
             this.key = key;
             this.value = value;
+        }
+
+        public Node<K, V> findMin() {
+            return this.leftChild == null ? this : this.leftChild.findMin();
+        }
+
+        public Node<K, V> findMax() {
+            return this.rightChild == null ? this : this.rightChild.findMax();
+        }
+
+        public Node<K, V> find(K key) {
+            if (this.key.compareTo(key) == 0) {
+                return this;
+            } else if (key.compareTo(this.key) < 0) {
+                Node<K, V> left = this.leftChild;
+                return left == null ? null : left.find(key);
+            } else {
+                Node<K, V> right = this.rightChild;
+                return right == null ? null : right.find(key);
+            }
+        }
+
+        public int getLevel() {
+            Node<K, V> current = this;
+            int counter = 1;
+            while (current.parent != null) {
+                counter++;
+                current = current.parent;
+            }
+
+            return counter;
+        }
+
+        public int getMaxDepth() {
+            int left = leftChild == null ? 0 : leftChild.getMaxDepth();
+            int right = rightChild == null ? 0 : rightChild.getMaxDepth();
+
+            return Math.max(left, right) + 1;
+        }
+
+        public Node<K, V> getNextLarger() {
+            if (this.rightChild != null) {
+                return this.rightChild.findMin();
+            }
+            Node<K, V> current = this;
+            while (current.parent != null &&
+                   current.parent.rightChild != null &&
+                   current.key.compareTo((K) current.parent.rightChild.key) == 0) {
+                current = current.parent;
+            }
+            return current.parent;
         }
 
         @Override
@@ -182,6 +238,7 @@ public class BinarySearchTree<K extends Comparable<K>, V> {
 
     public V delete(K key) {
         Node<K, V> deleted = deleteNode(root, false, key);
+        maxDepth = (root == null ? 0 : root.getMaxDepth());
         return deleted == null ? null : deleted.value;
     }
 
@@ -215,11 +272,7 @@ public class BinarySearchTree<K extends Comparable<K>, V> {
             }
         } else if (node.leftChild != null && node.rightChild != null) {
 
-            Node<K, V> current = node.rightChild;
-            while (current.leftChild != null) {
-                current = current.leftChild;
-            }
-
+            Node<K, V> current = node.getNextLarger();
             Node<K, V> curParent = current.parent;
             if (curParent.equals(node)) {
                 deleteRightReleation(curParent, current);
@@ -245,11 +298,16 @@ public class BinarySearchTree<K extends Comparable<K>, V> {
             }
         } else {
             root = newNode;
+            if (newNode != null) {
+                newNode.parent = null;
+            }
         }
 
         node.parent = null;
         node.leftChild = null;
         node.rightChild = null;
+
+        normalizeRank((newNode == null ? parent : newNode));
 
     }
 
@@ -275,6 +333,45 @@ public class BinarySearchTree<K extends Comparable<K>, V> {
         if (rightChild != null) rightChild.parent = null;
     }
 
+    private void normalizeRank(Node node) {
+        while (node != null) {
+            int sum = 1;
+            if (node.leftChild != null) sum += node.leftChild.rank;
+            if (node.rightChild != null) sum += node.rightChild.rank;
+            node.rank = sum;
+            node = node.parent;
+        }
 
+    }
 
+    public V find(K key) {
+        Node<K, V> found = root.find(key);
+        return found == null ? null: found.value;
+    }
+
+    public V findMin() {
+        return root == null ? null : root.findMin().value;
+    }
+
+    public V findMax() {
+        return root == null ? null : root.findMax().value;
+    }
+
+    public void testNextLarger() {
+
+        Queue<Node<K, V>> queue = new LinkedList<>();
+
+        queue.add(root);
+
+        while (queue.size() != 0) {
+            Node current = queue.poll();
+            System.out.printf("node: %s, next larger: %s \n", current, current.getNextLarger());
+            if (current.leftChild != null) {
+                queue.add(current.leftChild);
+            }
+            if (current.rightChild != null) {
+                queue.add(current.rightChild);
+            }
+        }
+    }
 }
