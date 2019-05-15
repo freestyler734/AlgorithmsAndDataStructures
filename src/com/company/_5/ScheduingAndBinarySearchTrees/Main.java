@@ -1,10 +1,12 @@
 package com.company._5.ScheduingAndBinarySearchTrees;
 
+import com.company.Util;
+
 public class Main {
 
     public static void main(String[] args) {
 
-        int[] randomArray = getArray(9); // {86, 67, 44, 68, 45, 15, 52, 16, 3};//
+        int[] randomArray = Util.getArray(9); // {86, 67, 44, 68, 45, 15, 52, 16, 3};//
         BinarySearchTree<Integer, String> bst = makeRandomBST(randomArray);
         bst.visualizeTree();
         //bst.testNextLarger();
@@ -29,18 +31,4 @@ public class Main {
         return bst;
     }
 
-    /**
-     * Генерирование данных
-     * @return
-     */
-    private static int[] getArray(int size) {
-        int[] array = new int[size];
-        System.out.print("input array:         ");
-        for (int i = 0; i < array.length; i++) {
-            array[i] = (int) (Math.random() * 100);
-            System.out.print(array[i] + " ");
-        }
-        System.out.println("\n");
-        return array;
-    }
 }
